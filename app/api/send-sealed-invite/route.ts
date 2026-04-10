@@ -59,26 +59,79 @@ function buildInviteEmail(args: {
     ? 'Your sealed memory is ready. Open it on Tyme to read it.'
     : 'A sealed memory is waiting for you on Tyme. Open it when you are ready.'
 
+  /** One stack everywhere so body + CTA match when webfonts load (and fall back together when they don’t). */
+  const ff =
+    "'Manrope','Helvetica Neue',Helvetica,Arial,sans-serif"
+  const gold = '#d4af37'
+  const goldHover = '#e4c34d'
+  const ink = '#1a1612'
+  const olive = '#8b7d3a'
+
+  const bodyHtml = isTimeLocked
+    ? `${escapeHtml('Your sealed memory is ready.')}<br /><br />${escapeHtml('Open it on Tyme to read it.')}`
+    : `${escapeHtml('A sealed memory is waiting for you on Tyme.')}<br /><br />${escapeHtml('Open it when you are ready.')}`
+
   const heroBlock = brandImageUrl
-    ? `<div style="margin:0 0 24px;text-align:center;"><img src="${escapeHtml(brandImageUrl)}" alt="Tyme" width="200" style="max-width:72%;height:auto;display:inline-block;border:0;" /></div>`
+    ? `<div style="margin:0 0 24px;text-align:center;"><img src="${escapeHtml(brandImageUrl)}" alt="Tyme" width="200" style="max-width:72%;height:auto;display:inline-block;border:0;border-radius:16px;vertical-align:middle;" /></div>`
     : ''
 
   const html = `<!DOCTYPE html>
 <html>
-<body style="margin:0;padding:40px 20px;background:#fdfaf5;font-family:Georgia,'Times New Roman',serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto;">
-    <tr><td style="text-align:center;">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="light" />
+<meta name="supported-color-schemes" content="light" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style type="text/css">
+  :root { color-scheme: light; }
+  .tyme-email-body {
+    font-family: ${ff} !important;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600 !important;
+    font-synthesis: none;
+    color: ${olive} !important;
+  }
+  .tyme-email-cta {
+    font-family: ${ff} !important;
+    font-weight: 700 !important;
+    border-radius: 20px !important;
+    -webkit-transition: transform 0.3s ease-out, background-color 0.3s ease-out, box-shadow 0.3s ease-out;
+    transition: transform 0.3s ease-out, background-color 0.3s ease-out, box-shadow 0.3s ease-out;
+  }
+  .tyme-email-cta:hover {
+    background-color: ${goldHover} !important;
+    -webkit-transform: translateY(-4px) scale(1.03);
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 14px 36px rgba(212, 175, 55, 0.45) !important;
+  }
+</style>
+</head>
+<body style="margin:0;padding:28px 16px;background-color:#ffffff;font-family:${ff};-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;">
+    <tr>
+      <td align="center" style="padding:0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;border-collapse:separate;border-spacing:0;border-radius:24px;overflow:hidden;background-color:#fffdf5;background-image:linear-gradient(180deg,#fdf5df 0%,#fffdf5 100%);box-shadow:0 16px 48px rgba(51,48,46,0.08);">
+          <tr>
+            <td style="padding:40px 28px;text-align:center;font-family:${ff};">
       ${heroBlock}
-      <p style="color:#2d2926;font-size:17px;line-height:1.55;margin:0 0 28px;text-align:center;">${escapeHtml(bodyLine)}</p>
+      <p class="tyme-email-body" style="margin:0 0 28px;padding:0;font-family:${ff};font-size:12px;font-weight:600;line-height:1.75;text-align:center;text-transform:uppercase;letter-spacing:0.12em;color:${olive};">${bodyHtml}</p>
       <p style="margin:0;">
-        <a href="${escapeHtml(shareUrl)}" style="display:inline-block;background:#c4a44d;color:#2d2926;text-decoration:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;">Open memory</a>
+        <a href="${escapeHtml(shareUrl)}" class="tyme-email-cta" style="display:inline-block;mso-padding-alt:0;background-color:${gold};color:${ink};text-decoration:none;padding:16px 40px;border-radius:20px;font-family:${ff};font-weight:700;font-size:10px;letter-spacing:0.28em;text-transform:uppercase;line-height:1.35;box-shadow:0 8px 24px rgba(212,175,55,0.35);white-space:nowrap;">Open memory&nbsp;&rarr;</a>
       </p>
-    </td></tr>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`
 
-  const text = `${bodyLine}\n\nOpen your memory using the “Open memory” button in the HTML version of this email.`
+  const text = `${bodyLine.toUpperCase()}\n\nOPEN YOUR MEMORY → — USE THE BUTTON IN THE HTML VERSION OF THIS EMAIL.`
 
   return { subject, html, text }
 }

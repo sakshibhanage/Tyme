@@ -4,12 +4,11 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { toPng } from 'html-to-image'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { getCapsuleTokenFromOpenUrl } from '@/lib/open-url'
 import type { DecodedCapsule } from '@/lib/payload'
 import { decodeCapsule } from '@/lib/payload'
-import { PixelGridImageBackground } from './PixelGridImageBackground'
-import { TymeBackgroundArt } from './TymeBackgroundArt'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -18,6 +17,10 @@ const L = {
   charcoal: '#33302E',
   olive: '#8B7D3A',
   border: '#D8D3C9',
+  letterGold: '#c4a44d',
+  letterInk: '#2d2926',
+  letterMuted: '#6b6560',
+  letterPaper: '#fdfaf5',
   cardTint: 'color-mix(in srgb, #ffffff 88%, #FDC5A5 12%)',
   metaPanel: 'color-mix(in srgb, #FEF6F0 72%, #ffffff 28%)',
 } as const
@@ -73,12 +76,6 @@ function OpenHeader() {
           </span>
           <span className="font-tyme-head text-lg font-semibold tracking-tight">Tyme</span>
         </Link>
-        <Link
-          href="/"
-          className="font-tyme-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#6B665F] transition hover:text-[#8B7D3A]"
-        >
-          Home
-        </Link>
       </div>
     </header>
   )
@@ -89,12 +86,23 @@ function readCapsuleCFromBrowser(): string {
   return getCapsuleTokenFromOpenUrl(new URL(window.location.href))
 }
 
+function memoryDownloadFilename(title: string) {
+  const s = title
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9-_]/g, '')
+    .slice(0, 48)
+  return s || 'memory'
+}
+
 export function OpenMemoryClient() {
   const searchParams = useSearchParams()
   const queryC = searchParams.get('c') ?? ''
   const [raw, setRaw] = useState(queryC)
   const [now, setNow] = useState(() => Date.now())
+  const [downloadBusy, setDownloadBusy] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const memoryExportRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
     const sync = () => {
@@ -201,16 +209,12 @@ export function OpenMemoryClient() {
     }
   }, [animSignature])
 
-  const shell = (children: React.ReactNode, pixelImageSrc?: string | null) => (
+  const shell = (children: React.ReactNode) => (
     <div
       ref={rootRef}
       className="relative min-h-screen bg-gradient-to-b from-[#fdf5df] to-[#FFFDF5] font-tyme-sans"
       style={{ color: L.charcoal }}
     >
-      {pixelImageSrc?.trim() ? (
-        <PixelGridImageBackground imageSrc={pixelImageSrc} gridCols={40} gridRows={28} tone="light" />
-      ) : null}
-      <TymeBackgroundArt variant="light" />
       <OpenHeader />
       <div className="relative z-10">{children}</div>
     </div>
@@ -350,10 +354,37 @@ export function OpenMemoryClient() {
     </div>
   ) : null
 
+  async function handleDownloadMemoryPng() {
+    const root = memoryExportRef.current
+    if (!root || downloadBusy) return
+    setDownloadBusy(true)
+    try {
+      const dataUrl = await toPng(root, {
+        pixelRatio: 2,
+        filter: (node) => {
+          if (!(node instanceof HTMLElement)) return true
+          return !node.classList.contains('open-mem-export-skip')
+        },
+      })
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = `tyme-${memoryDownloadFilename(mem.title)}.png`
+      a.click()
+    } catch (err) {
+      console.error('Download memory PNG failed:', err)
+    } finally {
+      setDownloadBusy(false)
+    }
+  }
+
   return shell(
     <div className="mx-auto max-w-6xl px-6 pb-32 pt-10 sm:pt-14">
+      <div
+        ref={memoryExportRef}
+        className="rounded-[1.75rem] bg-gradient-to-b from-[#fdf5df] to-[#FFFDF5] p-6 shadow-[0_28px_64px_rgba(51,48,46,0.07)] sm:p-10 lg:p-14"
+      >
       <article
-        className="open-mem-card relative overflow-hidden rounded-2xl border border-[#D8D3C9] p-8 shadow-[0_24px_56px_rgba(51,48,46,0.08)] backdrop-blur-sm ring-1 ring-[#8B7D3A]/20 sm:p-12 lg:p-14"
+        className="open-mem-card relative overflow-hidden rounded-2xl border border-[#D8D3C9] shadow-[0_24px_56px_rgba(51,48,46,0.08)] backdrop-blur-sm ring-1 ring-[#8B7D3A]/20"
         style={{ backgroundColor: L.cardTint }}
       >
         <div
@@ -361,53 +392,125 @@ export function OpenMemoryClient() {
           style={{ backgroundColor: 'color-mix(in srgb, #FDC5A5 35%, transparent)' }}
           aria-hidden
         />
-        <div className="open-mem-line mb-10 h-1 w-16 rounded-full bg-[#8B7D3A]/75" />
 
-        <p className="open-mem-anim font-tyme-sans text-[10px] font-semibold uppercase tracking-[0.42em] text-[#8B7D3A]">
-          Your memory
-        </p>
-
-        {mem.img ? (
-          <div className="mt-4 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-14 lg:items-start">
-            <div className="min-w-0">
-              <div className="min-w-0">
-                <h1 className="font-tyme-sans text-[clamp(2.5rem,8vw,4.5rem)] font-extrabold leading-[0.92] tracking-[-0.035em] text-[#33302E] lg:text-[clamp(2.75rem,5vw,4.25rem)]">
-                  {mem.title}
-                </h1>
-              </div>
-              <div className="open-mem-prose mt-8 border-l-2 border-[#8B7D3A]/40 pl-6 sm:pl-8 lg:mt-10">
-                <div className="whitespace-pre-wrap font-tyme-sans text-lg leading-[1.75] text-[#6B665F] sm:text-xl">
-                  {mem.message}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-center lg:sticky lg:top-28 lg:justify-end lg:self-start">{polaroid}</div>
+        <header className="open-mem-anim relative px-6 pb-10 pt-10 sm:px-10 sm:pb-12 sm:pt-12 lg:px-14">
+          <div
+            className="pointer-events-none absolute left-5 top-6 flex items-center gap-1.5 font-tyme-head text-[11px] sm:left-8"
+            style={{ color: L.letterGold }}
+            aria-hidden
+          >
+            <span>✦</span>
+            <span className="opacity-50">·</span>
+            <span className="opacity-50">·</span>
           </div>
-        ) : (
-          <>
-            <div className="mt-4">
-              <h1 className="font-tyme-sans text-[clamp(2.75rem,11vw,6.25rem)] font-extrabold leading-[0.92] tracking-[-0.035em] text-[#33302E]">
-                {mem.title}
-              </h1>
+          <div
+            className="pointer-events-none absolute right-5 top-6 flex items-center gap-1.5 font-tyme-head text-[11px] sm:right-8"
+            style={{ color: L.letterGold }}
+            aria-hidden
+          >
+            <span>✦</span>
+            <span className="opacity-50">·</span>
+            <span className="opacity-50">·</span>
+          </div>
+
+          <div className="relative mx-auto flex max-w-md flex-col items-center text-center">
+            <div
+              className="flex h-[3.35rem] w-[3.35rem] items-center justify-center rounded-full font-tyme-head text-2xl font-semibold sm:h-[3.85rem] sm:w-[3.85rem] sm:text-[1.65rem]"
+              style={{
+                color: L.letterInk,
+                backgroundColor: L.letterPaper,
+                boxShadow: `0 0 0 1px ${L.charcoal}2e, 0 0 0 3px ${L.letterPaper}, 0 0 0 4px ${L.charcoal}24`,
+              }}
+            >
+              T
             </div>
-            <div className="open-mem-prose mt-10 border-l-2 border-[#8B7D3A]/40 pl-6 sm:pl-8">
-              <div className="whitespace-pre-wrap font-tyme-sans text-lg leading-[1.75] text-[#6B665F] sm:text-xl">
-                {mem.message}
+            <p
+              className="mt-5 font-tyme-head text-[10px] font-medium uppercase tracking-[0.52em] sm:text-[11px]"
+              style={{ color: L.letterMuted }}
+            >
+              Tyme Seal
+            </p>
+          </div>
+        </header>
+
+        <div className="px-8 pb-2 pt-0 sm:px-12 lg:px-14">
+          <div className="open-mem-anim">
+            <p className="font-tyme-sans text-[10px] font-semibold uppercase tracking-[0.42em] text-[#8B7D3A]">
+              Your memory
+            </p>
+
+            {mem.img ? (
+              <div className="mt-4 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-14 lg:items-start">
+                <div className="min-w-0">
+                  <div className="min-w-0">
+                    <h1 className="font-tyme-sans text-[clamp(2.5rem,8vw,4.5rem)] font-extrabold leading-[0.92] tracking-[-0.035em] text-[#33302E] lg:text-[clamp(2.75rem,5vw,4.25rem)]">
+                      {mem.title}
+                    </h1>
+                  </div>
+                  <div className="open-mem-prose mt-8 border-l-2 border-[#8B7D3A]/40 pl-6 sm:pl-8 lg:mt-10">
+                    <div className="whitespace-pre-wrap font-tyme-sans text-lg leading-[1.75] text-[#6B665F] sm:text-xl">
+                      {mem.message}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-center lg:sticky lg:top-28 lg:justify-end lg:self-start">{polaroid}</div>
               </div>
-            </div>
-          </>
-        )}
+            ) : (
+              <>
+                <div className="mt-4">
+                  <h1 className="font-tyme-sans text-[clamp(2.75rem,11vw,6.25rem)] font-extrabold leading-[0.92] tracking-[-0.035em] text-[#33302E]">
+                    {mem.title}
+                  </h1>
+                </div>
+                <div className="open-mem-prose mt-10 border-l-2 border-[#8B7D3A]/40 pl-6 sm:pl-8">
+                  <div className="whitespace-pre-wrap font-tyme-sans text-lg leading-[1.75] text-[#6B665F] sm:text-xl">
+                    {mem.message}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
 
         <div
-          className="open-mem-anim mt-14 flex flex-col gap-4 border-t pt-10 sm:flex-row sm:items-center sm:justify-between"
-          style={{ borderColor: `${L.border}b3` }}
+          className="pointer-events-none relative px-6 pb-10 pt-4 sm:px-10 sm:pb-12 lg:px-14"
+          aria-hidden
         >
-          <Link
-            href="/tyme/seal"
-            className="inline-flex justify-center rounded-xl bg-tyme-gold px-10 py-4 text-center text-[10px] font-bold uppercase tracking-[0.24em] text-tyme-ink shadow-[0_8px_24px_rgba(212,175,55,0.35)] transition hover:bg-tyme-gold-hover"
+          <div
+            className="absolute bottom-0 left-5 flex items-center gap-1.5 font-tyme-head text-[11px] sm:left-8"
+            style={{ color: L.letterGold }}
           >
-            Seal another →
-          </Link>
+            <span>✦</span>
+            <span className="opacity-50">·</span>
+            <span className="opacity-50">·</span>
+          </div>
+          <div
+            className="absolute bottom-0 right-5 flex items-center gap-1.5 font-tyme-head text-[11px] sm:right-8"
+            style={{ color: L.letterGold }}
+          >
+            <span>✦</span>
+            <span className="opacity-50">·</span>
+            <span className="opacity-50">·</span>
+          </div>
+        </div>
+
+        <div className="open-mem-export-skip open-mem-anim flex flex-col gap-4 px-8 pb-8 pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-6 sm:px-12 sm:pt-6 lg:px-14">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <Link
+              href="/tyme/seal"
+              className="inline-flex justify-center rounded-xl bg-tyme-gold px-10 py-4 text-center text-[10px] font-bold uppercase tracking-[0.24em] text-tyme-ink shadow-[0_8px_24px_rgba(212,175,55,0.35)] transition hover:bg-tyme-gold-hover"
+            >
+              Seal another →
+            </Link>
+            <button
+              type="button"
+              onClick={() => void handleDownloadMemoryPng()}
+              disabled={downloadBusy}
+              className="inline-flex justify-center rounded-md border border-[#8B7D3A] bg-transparent px-8 py-3.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.22em] text-[#8B7D3A] transition hover:bg-[#f5f3ef] disabled:cursor-wait disabled:opacity-60"
+            >
+              {downloadBusy ? 'Preparing…' : 'Download memory'}
+            </button>
+          </div>
           <Link
             href="/"
             className="text-center text-[10px] font-bold uppercase tracking-[0.22em] text-[#6B665F] transition hover:text-[#8B7D3A] sm:text-left"
@@ -416,7 +519,7 @@ export function OpenMemoryClient() {
           </Link>
         </div>
       </article>
+      </div>
     </div>,
-    mem.img,
   )
 }

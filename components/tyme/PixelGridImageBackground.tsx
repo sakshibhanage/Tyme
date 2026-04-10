@@ -1,12 +1,13 @@
 'use client'
 
 /**
- * Image-sampled pixel grid background (inspired by Aceternity’s Webcam Pixel Grid:
- * https://ui.aceternity.com/components/webcam-pixel-grid ) — uses a still image URL / data URL
- * instead of getUserMedia. Falls back to a blurred grid overlay if canvas sampling fails (CORS).
+ * Pixel grid background (inspired by Aceternity’s Webcam Pixel Grid:
+ * https://ui.aceternity.com/components/webcam-pixel-grid ).
+ * - `pixelColors="gradient"`: same tile layout + depth, fills from warm cream→sand stops (default).
+ * - `pixelColors="image"`: sample colors from `imageSrc`; blurred grid fallback if CORS blocks canvas.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 const DEFAULT_COLS = 42
 const DEFAULT_ROWS = 30
@@ -14,6 +15,68 @@ const GAP = 0.12
 const MAX_LIFT = 10
 
 type Sample = { r: number; g: number; b: number; luma: number }
+
+type Rgb = { r: number; g: number; b: number }
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t
+}
+
+function lerpRgb(c0: Rgb, c1: Rgb, t: number): Rgb {
+  return {
+    r: Math.round(lerp(c0.r, c1.r, t)),
+    g: Math.round(lerp(c0.g, c1.g, t)),
+    b: Math.round(lerp(c0.b, c1.b, t)),
+  }
+}
+
+/** Smooth multi-stop linear gradient (warm landing hues) mapped diagonally across the grid */
+function gradientSamples(cols: number, rows: number, light: boolean): Sample[] {
+  const stops: Array<{ u: number } & Rgb> = light
+    ? [
+        { u: 0, r: 253, g: 245, b: 223 },
+        { u: 0.35, r: 255, g: 253, b: 245 },
+        { u: 0.62, r: 240, g: 235, b: 226 },
+        { u: 0.82, r: 228, g: 223, b: 214 },
+        { u: 1, r: 216, g: 211, b: 201 },
+      ]
+    : [
+        { u: 0, r: 32, g: 28, b: 24 },
+        { u: 0.4, r: 42, g: 38, b: 32 },
+        { u: 0.75, r: 52, g: 46, b: 38 },
+        { u: 1, r: 26, g: 22, b: 18 },
+      ]
+
+  const sampleU = (u: number): Rgb => {
+    const x = Math.min(1, Math.max(0, u))
+    let i = 0
+    while (i < stops.length - 1 && stops[i + 1]!.u < x) i++
+    const a = stops[i]!
+    const b = stops[i + 1] ?? a
+    const span = b.u - a.u || 1
+    const t = (x - a.u) / span
+    return lerpRgb(a, b, t)
+  }
+
+  const out: Sample[] = []
+  const cx = Math.max(1, cols - 1)
+  const cy = Math.max(1, rows - 1)
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      // Diagonal + slight horizontal bias — matches page `bg-gradient-to-b` feel in 2D
+      const u = (x / cx) * 0.42 + (y / cy) * 0.58
+      let { r, g, b } = sampleU(u)
+      // Tiny per-cell variation so squares stay visible without photo noise
+      const wobble = 0.988 + 0.024 * Math.sin(x * 0.51 + y * 0.37)
+      r = Math.min(255, Math.max(0, Math.round(r * wobble)))
+      g = Math.min(255, Math.max(0, Math.round(g * wobble)))
+      b = Math.min(255, Math.max(0, Math.round(b * wobble)))
+      const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+      out.push({ r, g, b, luma })
+    }
+  }
+  return out
+}
 
 function sampleImage(
   img: HTMLImageElement,
@@ -51,20 +114,25 @@ export function PixelGridImageBackground({
   gridRows = DEFAULT_ROWS,
   className = '',
   tone = 'dark',
+  /** `gradient` = same grid look, colors from warm cream→sand stops (not photo sampling) */
+  pixelColors = 'gradient',
 }: {
-  imageSrc: string | null | undefined
+  imageSrc?: string | null | undefined
   gridCols?: number
   gridRows?: number
   className?: string
   /** `light` matches warm cream landing (`/`) when used behind open-memory UI */
   tone?: 'dark' | 'light'
+  pixelColors?: 'image' | 'gradient'
 }) {
   const light = tone === 'light'
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const samplesRef = useRef<Sample[] | null>(null)
   const drawRef = useRef<() => void>(() => {})
-  const [mode, setMode] = useState<'idle' | 'canvas' | 'fallback'>('idle')
+  const [mode, setMode] = useState<'idle' | 'canvas' | 'fallback'>(() =>
+    pixelColors === 'gradient' ? 'canvas' : 'idle',
+  )
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -93,8 +161,10 @@ export function PixelGridImageBackground({
     const offX = (cellW - innerW) / 2
     const offY = (cellH - innerH) / 2
 
-    ctx.fillStyle = '#1a1612'
+    ctx.fillStyle = light ? '#fdf5df' : '#1a1612'
     ctx.fillRect(0, 0, w, h)
+
+    const stroke = light ? 'rgba(51, 48, 46, 0.14)' : 'rgba(26, 22, 18, 0.35)'
 
     let idx = 0
     for (let y = 0; y < gridRows; y++) {
@@ -107,16 +177,27 @@ export function PixelGridImageBackground({
         ctx.fillStyle = `rgb(${s.r},${s.g},${s.b})`
         ctx.fillRect(px, py, innerW, innerH + lift * 0.15)
 
-        ctx.strokeStyle = 'rgba(26, 22, 18, 0.35)'
+        ctx.strokeStyle = stroke
         ctx.lineWidth = 0.5
         ctx.strokeRect(px, py, innerW, innerH + lift * 0.15)
       }
     }
-  }, [gridCols, gridRows])
+  }, [gridCols, gridRows, light])
 
   drawRef.current = draw
 
+  useLayoutEffect(() => {
+    if (pixelColors !== 'gradient') return
+    samplesRef.current = gradientSamples(gridCols, gridRows, light)
+    drawRef.current()
+  }, [pixelColors, gridCols, gridRows, light])
+
   useEffect(() => {
+    if (pixelColors === 'gradient') {
+      setMode('canvas')
+      return
+    }
+
     if (!imageSrc?.trim()) {
       samplesRef.current = null
       setMode('idle')
@@ -153,7 +234,7 @@ export function PixelGridImageBackground({
     return () => {
       cancelled = true
     }
-  }, [imageSrc, gridCols, gridRows])
+  }, [imageSrc, gridCols, gridRows, pixelColors])
 
   useEffect(() => {
     if (mode !== 'canvas') return
@@ -169,9 +250,9 @@ export function PixelGridImageBackground({
     }
   }, [mode, gridCols, gridRows])
 
-  if (!imageSrc?.trim()) return null
+  if (pixelColors === 'image' && !imageSrc?.trim()) return null
 
-  if (mode === 'fallback' || mode === 'idle') {
+  if (mode === 'fallback') {
     return (
       <div
         className={`pointer-events-none fixed inset-0 z-0 overflow-hidden ${className}`}

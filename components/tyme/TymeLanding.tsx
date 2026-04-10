@@ -466,7 +466,7 @@ export function TymeLanding() {
           </div>
         </section>
 
-        <section className="tyme-section-cta relative bg-[#E9E7DE]/45 px-5 py-32 text-[#33302E] sm:px-10 sm:py-40">
+        <section className="tyme-section-cta relative px-5 py-32 text-[#33302E] sm:px-10 sm:py-40">
           <div className="pointer-events-none absolute right-8 top-10 hidden sm:block" aria-hidden>
             <span
               className="inline-flex h-8 w-8 items-center justify-center font-tyme-sans text-lg leading-none text-white"
@@ -484,16 +484,20 @@ export function TymeLanding() {
               Ready to
             </div>
             <div className="tyme-cursor-magnet tyme-cta-line mt-4 inline-block will-change-transform">
-              <span className="font-tyme-head text-[clamp(4rem,18vw,13rem)] font-bold uppercase leading-[0.82] tracking-[-0.045em]">
-                <span className="tyme-outline-ink">Seal?</span>
+              <span className="font-tyme-head text-[clamp(4rem,18vw,13rem)] font-semibold not-italic uppercase leading-[0.82] tracking-[0.02em]">
+                <span className="tyme-outline-olive-display" aria-label="Seal?">
+                  Seal?
+                </span>
               </span>
             </div>
 
             <Link
               href="/tyme/seal"
-              className="tyme-cta-btn mt-16 inline-flex bg-tyme-gold px-12 py-4 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.28em] text-tyme-ink transition hover:bg-tyme-gold-hover"
+              className="tyme-cta-btn group mt-16 inline-flex rounded-xl bg-tyme-gold px-10 py-4 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.28em] text-tyme-ink shadow-[0_8px_24px_rgba(212,175,55,0.35)] transition duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] hover:bg-tyme-gold-hover hover:shadow-[0_14px_36px_rgba(212,175,55,0.45)] active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7D3A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFFDF5]"
             >
-              Create your first memory →
+              <span className="transition-transform duration-300 ease-out group-hover:translate-x-0.5">
+                Create your first memory →
+              </span>
             </Link>
           </div>
 

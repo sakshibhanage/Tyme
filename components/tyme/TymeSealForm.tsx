@@ -2,7 +2,8 @@
 
 import gsap from 'gsap'
 import Link from 'next/link'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { imageFileToDataUrl } from '@/lib/compress-image'
 import { encodeCapsule } from '@/lib/payload'
 import { TymeBackgroundArt } from './TymeBackgroundArt'
@@ -51,6 +52,7 @@ function TymeLogo() {
 }
 
 export function TymeSealForm() {
+  const router = useRouter()
   const rootRef = useRef<HTMLDivElement>(null)
   const [step, setStep] = useState(1)
   const [title, setTitle] = useState('')
@@ -69,7 +71,17 @@ export function TymeSealForm() {
   /** True when API used Resend scheduled send (time-locked). */
   const [inviteScheduledDelivery, setInviteScheduledDelivery] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
+  const [homeLeaveConfirmOpen, setHomeLeaveConfirmOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!homeLeaveConfirmOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setHomeLeaveConfirmOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [homeLeaveConfirmOpen])
 
   useLayoutEffect(() => {
     const root = rootRef.current
@@ -240,25 +252,8 @@ export function TymeSealForm() {
         className="tyme-seal-head relative z-10 border-b bg-[#fdf5df] px-5 py-5 shadow-[0_1px_0_rgba(45,41,38,0.06)] sm:px-10 sm:py-6"
         style={{ borderColor: `${V.border}99` }}
       >
-        <div className="mx-auto flex max-w-[1100px] items-center justify-between">
+        <div className="mx-auto flex max-w-[1100px] items-center">
           <TymeLogo />
-          <div className="flex items-center gap-6">
-            {step > 1 ? (
-              <button
-                type="button"
-                onClick={goBack}
-                className="font-tyme-sans text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6B665F] transition hover:text-[#8B7D3A]"
-              >
-                ← Previous
-              </button>
-            ) : null}
-            <Link
-              href="/"
-              className="font-tyme-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-[#6B665F] transition hover:text-[#8B7D3A]"
-            >
-              ← Home
-            </Link>
-          </div>
         </div>
       </header>
 
@@ -310,13 +305,41 @@ export function TymeSealForm() {
           </p>
         </nav>
 
-        <div
-          className="tyme-seal-panel relative overflow-hidden rounded-lg border shadow-[0_4px_48px_rgba(45,41,38,0.07)] sm:rounded-xl"
-          style={{
-            borderColor: V.letterRule,
-            backgroundColor: V.letterPaper,
-          }}
-        >
+        <div className="relative">
+          {step > 1 ? (
+            <button
+              type="button"
+              onClick={goBack}
+              aria-label="Back"
+              className="group mb-5 flex min-h-10 items-center rounded-sm text-[#33302E] transition-colors duration-300 ease-out hover:text-[#B08D57] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4a44d]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdf5df] sm:absolute sm:mb-0 sm:right-full sm:top-[2.65rem] sm:mr-10 sm:min-h-0 sm:py-1 sm:pl-0 sm:pr-1"
+            >
+              <span className="inline-flex items-center gap-2 transition-transform duration-300 ease-out group-hover:-translate-x-1.5">
+                <svg
+                  className="h-[11px] w-[7px] shrink-0 sm:h-[13px] sm:w-2"
+                  viewBox="0 0 8 14"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden
+                >
+                  <path
+                    d="M6 1 1 7l5 6"
+                    stroke="currentColor"
+                    strokeWidth="1.25"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="font-tyme-sans text-[10px] font-bold uppercase tracking-[0.26em]">Back</span>
+              </span>
+            </button>
+          ) : null}
+          <div
+            className="tyme-seal-panel relative overflow-hidden rounded-lg border shadow-[0_4px_48px_rgba(45,41,38,0.07)] sm:rounded-xl"
+            style={{
+              borderColor: V.letterRule,
+              backgroundColor: V.letterPaper,
+            }}
+          >
           <header className="relative px-6 pb-10 pt-10 sm:px-10 sm:pb-12 sm:pt-12">
             <div
               className="pointer-events-none absolute left-5 top-6 flex items-center gap-1.5 font-tyme-head text-[11px] sm:left-8"
@@ -378,7 +401,7 @@ export function TymeSealForm() {
           {step === 1 ? (
             <div key="s1" className="tyme-seal-step-animate">
               <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-14 lg:items-start">
-                <form className="min-w-0 space-y-10" onSubmit={handleStep1Continue}>
+                <form id="tyme-seal-step1" className="min-w-0 space-y-10" onSubmit={handleStep1Continue}>
                   <div>
                     <label
                       htmlFor="mem-title"
@@ -433,18 +456,6 @@ export function TymeSealForm() {
                         e.target.style.borderBottomColor = V.letterRule
                       }}
                     />
-                  </div>
-                  <div className="flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
-                    <button
-                      type="submit"
-                      className="inline-flex justify-center rounded-md px-10 py-3.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.28em] text-tyme-ink transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c4a44d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdfaf5]"
-                      style={{ backgroundColor: V.letterGold }}
-                    >
-                      Continue
-                    </button>
-                    <p className="font-tyme-sans text-xs leading-relaxed" style={{ color: V.letterMuted }}>
-                      Next: choose whether this memory is time-locked.
-                    </p>
                   </div>
                 </form>
 
@@ -553,6 +564,24 @@ export function TymeSealForm() {
                     </button>
                   )}
                 </aside>
+
+                <div className="col-span-full grid grid-cols-1 gap-4 pt-8 lg:grid-cols-2 lg:gap-14 lg:items-center">
+                  <div className="flex justify-start">
+                    <button
+                      type="submit"
+                      form="tyme-seal-step1"
+                      className="inline-flex shrink-0 justify-center rounded-xl bg-[#c4a44d] px-10 py-3.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.28em] text-tyme-ink shadow-[0_8px_24px_rgba(196,164,77,0.35)] transition duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] hover:bg-[#d4b856] hover:shadow-[0_14px_36px_rgba(196,164,77,0.45)] active:translate-y-0 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7D3A]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdfaf5]"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                  <p
+                    className="text-right font-tyme-sans text-xs leading-relaxed lg:max-w-none"
+                    style={{ color: V.letterMuted }}
+                  >
+                    Next: choose whether this memory is time-locked.
+                  </p>
+                </div>
               </div>
             </div>
           ) : null}
@@ -637,15 +666,17 @@ export function TymeSealForm() {
                   </label>
                 </fieldset>
 
-                <div className="flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex w-full flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:gap-6">
                   <button
                     type="submit"
-                    className="inline-flex justify-center rounded-md px-10 py-3.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.28em] text-tyme-ink transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c4a44d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdfaf5]"
-                    style={{ backgroundColor: V.letterGold }}
+                    className="inline-flex shrink-0 justify-center self-start rounded-xl bg-[#c4a44d] px-10 py-3.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.28em] text-tyme-ink shadow-[0_8px_24px_rgba(196,164,77,0.35)] transition duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] hover:bg-[#d4b856] hover:shadow-[0_14px_36px_rgba(196,164,77,0.45)] active:translate-y-0 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7D3A]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdfaf5] sm:self-auto"
                   >
                     Continue
                   </button>
-                  <p className="font-tyme-sans text-xs leading-relaxed" style={{ color: V.letterMuted }}>
+                  <p
+                    className="min-w-0 flex-1 text-right font-tyme-sans text-xs leading-relaxed"
+                    style={{ color: V.letterMuted }}
+                  >
                     Next: send the invitation by email.
                   </p>
                 </div>
@@ -733,13 +764,11 @@ export function TymeSealForm() {
                     type="button"
                     onClick={sendInviteEmail}
                     disabled={inviteSending || inviteSent}
-                    className="shrink-0 rounded-md px-6 py-2.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.2em] transition disabled:opacity-50"
-                    style={{
-                      borderWidth: 1,
-                      borderColor: V.olive,
-                      backgroundColor: inviteSent ? V.letterField : 'transparent',
-                      color: V.olive,
-                    }}
+                    className={`shrink-0 rounded-xl px-6 py-2.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.2em] text-tyme-ink shadow-[0_8px_24px_rgba(196,164,77,0.35)] transition duration-300 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7D3A]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdfaf5] disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:scale-100 disabled:hover:shadow-[0_8px_24px_rgba(196,164,77,0.35)] ${
+                      inviteSent
+                        ? 'bg-[#a89358] opacity-95'
+                        : 'bg-[#c4a44d] hover:-translate-y-1 hover:scale-[1.03] hover:bg-[#d4b856] hover:shadow-[0_14px_36px_rgba(196,164,77,0.45)] active:translate-y-0 active:scale-[0.98] disabled:opacity-55'
+                    }`}
                   >
                     {inviteSending ? 'Sending…' : inviteSent ? 'Invitation sent' : 'Send invitation email'}
                   </button>
@@ -766,13 +795,20 @@ export function TymeSealForm() {
               </div>
 
               <div
-                className="mt-10 flex max-w-2xl border-t pt-10"
+                className="mt-10 flex max-w-2xl flex-col gap-4 border-t pt-10 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
                 style={{ borderColor: V.letterRule }}
               >
                 <button
                   type="button"
+                  onClick={() => setHomeLeaveConfirmOpen(true)}
+                  className="inline-flex w-fit items-center justify-center rounded-md border border-[#8B7D3A] bg-transparent px-10 py-3.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.28em] text-[#8B7D3A] transition duration-300 ease-out hover:bg-[#f5f3ef] hover:border-[#6d6430] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7D3A]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fdfaf5]"
+                >
+                  Return home
+                </button>
+                <button
+                  type="button"
                   onClick={startOver}
-                  className="px-10 py-3.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.24em] underline-offset-4 hover:underline"
+                  className="self-end py-3.5 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.24em] underline-offset-4 hover:underline sm:self-auto sm:px-2"
                   style={{ color: V.letterMuted }}
                 >
                   Create another
@@ -782,7 +818,61 @@ export function TymeSealForm() {
           ) : null}
           </div>
         </div>
+        </div>
       </div>
+
+      {homeLeaveConfirmOpen ? (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-6"
+          role="presentation"
+          onClick={() => setHomeLeaveConfirmOpen(false)}
+        >
+          <div className="absolute inset-0 bg-[#33302E]/45 backdrop-blur-[2px]" aria-hidden />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tyme-home-leave-title"
+            className="relative max-w-md rounded-2xl border p-8 shadow-[0_24px_56px_rgba(51,48,46,0.18)]"
+            style={{
+              backgroundColor: V.letterPaper,
+              borderColor: V.border,
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h2
+              id="tyme-home-leave-title"
+              className="font-tyme-sans text-lg font-semibold tracking-tight"
+              style={{ color: V.letterInk }}
+            >
+              Return to homepage?
+            </h2>
+            <p className="mt-3 font-tyme-sans text-sm leading-relaxed" style={{ color: V.body }}>
+              Are you sure you want to leave? You can always come back to seal another memory.
+            </p>
+            <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setHomeLeaveConfirmOpen(false)}
+                className="rounded-md border px-6 py-3 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.22em] transition hover:bg-[#f5f3ef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7D3A]/50"
+                style={{ borderColor: V.olive, color: V.olive }}
+              >
+                Stay here
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHomeLeaveConfirmOpen(false)
+                  router.push('/')
+                }}
+                className="rounded-xl px-6 py-3 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.2em] text-tyme-ink shadow-[0_8px_24px_rgba(196,164,77,0.35)] transition hover:bg-[#d4b856] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7D3A]/50"
+                style={{ backgroundColor: V.letterGold }}
+              >
+                Yes, go home
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
