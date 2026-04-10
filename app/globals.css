@@ -1,0 +1,429 @@
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+@import 'lenis/dist/lenis.css';
+@import 'tailwindcss';
+
+/* Tyme design tokens — warm dark UI system */
+@theme inline {
+  --font-sans: var(--font-body), 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-display: var(--font-headline), 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-handwritten: var(--font-handwritten), 'Caveat', cursive;
+
+  --font-tyme-head: var(--font-tyme-headline), 'Noto Serif', Georgia, serif;
+  --font-tyme-sans: var(--font-tyme-body), 'Manrope', system-ui, sans-serif;
+
+  --color-tyme-canvas: #1a1612;
+  --color-tyme-surface: #242019;
+  --color-tyme-surface-mid: #2c2620;
+  --color-tyme-gold: #d4af37;
+  --color-tyme-gold-hover: #e4c34d;
+  --color-tyme-secondary: #7a6a53;
+  --color-tyme-tertiary: #b3723e;
+  --color-tyme-text: #d4af37;
+  --color-tyme-text-muted: #9a9185;
+  --color-tyme-paper: #f2ede4;
+  --color-tyme-ink: #1a1612;
+
+  --color-tyme-bg: #fefcf4;
+  --color-tyme-on: #383833;
+  --color-tyme-muted: #65655f;
+  --color-tyme-primary: #7b6100;
+  --color-tyme-on-primary: #ffffff;
+  --color-tyme-gold-legacy: #f5ce53;
+  --color-tyme-on-gold: #584500;
+  --color-tyme-peach: #ffc5a6;
+  --color-tyme-peach-ink: #773400;
+  --color-tyme-secondary-legacy: #a44a00;
+  --color-tyme-tertiary-legacy: #037524;
+  --color-tyme-panel: #ffffff;
+  --color-tyme-panel-soft: #f5f4eb;
+  --color-tyme-panel-mid: #efeee5;
+  --color-tyme-border: #e9e9de;
+  --color-tyme-outline: #bab9b2;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  vertical-align: middle;
+}
+
+/*
+ * Pen nib — public/cursors/tyme-pen-cursor.png (32×32), hotspot ≈ nib tip.
+ * Coarse pointers (touch): CSS url() only.
+ * Fine pointers (mouse): `TymePenCursor` follows the pointer + `cursor: none` below — WebKit’s
+ * `cursor: url()` often stops painting after small moves over composited layers.
+ */
+html {
+  scroll-behavior: auto;
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, auto !important;
+}
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+body {
+  @apply min-h-screen bg-tyme-bg font-sans text-tyme-on antialiased;
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, auto !important;
+}
+
+body * {
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, auto !important;
+}
+
+canvas {
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, auto !important;
+}
+
+a,
+button,
+[role='button'],
+input[type='button'],
+input[type='submit'],
+input[type='reset'],
+input[type='file'],
+input[type='checkbox'],
+input[type='radio'],
+label[for],
+select,
+summary {
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, pointer !important;
+}
+
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='password'],
+input[type='url'],
+input[type='tel'],
+input[type='number'],
+input[type='datetime-local'],
+input:not([type]),
+textarea {
+  cursor: text !important;
+}
+
+/* Nav / top bar: must come after `body *` and `a` so specificity wins — WebKit repaints url() cursors. */
+body header {
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, auto !important;
+}
+
+body header * {
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, auto !important;
+}
+
+body header a,
+body header button,
+body header [role='button'],
+body header label[for],
+body header summary {
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, pointer !important;
+}
+
+body header input[type='text'],
+body header input[type='search'],
+body header input[type='email'],
+body header input[type='password'],
+body header input[type='url'],
+body header input[type='tel'],
+body header input[type='number'],
+body header input:not([type]),
+body header textarea {
+  cursor: text !important;
+}
+
+.cursor-pointer {
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, pointer !important;
+}
+
+.cursor-default {
+  cursor: url('/cursors/tyme-pen-cursor.png') 6 4, auto !important;
+}
+
+.cursor-wait,
+.disabled\:cursor-wait:disabled {
+  cursor: wait !important;
+}
+
+@media (pointer: fine) {
+  html {
+    cursor: none !important;
+  }
+
+  body {
+    cursor: none !important;
+  }
+
+  body * {
+    cursor: none !important;
+  }
+
+  canvas {
+    cursor: none !important;
+  }
+
+  a,
+  button,
+  [role='button'],
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  input[type='file'],
+  input[type='checkbox'],
+  input[type='radio'],
+  label[for],
+  select,
+  summary {
+    cursor: none !important;
+  }
+
+  input[type='text'],
+  input[type='search'],
+  input[type='email'],
+  input[type='password'],
+  input[type='url'],
+  input[type='tel'],
+  input[type='number'],
+  input[type='datetime-local'],
+  input:not([type]),
+  textarea {
+    cursor: text !important;
+  }
+
+  body header {
+    cursor: none !important;
+  }
+
+  body header * {
+    cursor: none !important;
+  }
+
+  body header a,
+  body header button,
+  body header [role='button'],
+  body header label[for],
+  body header summary {
+    cursor: none !important;
+  }
+
+  body header input[type='text'],
+  body header input[type='search'],
+  body header input[type='email'],
+  body header input[type='password'],
+  body header input[type='url'],
+  body header input[type='tel'],
+  body header input[type='number'],
+  body header input:not([type]),
+  body header textarea {
+    cursor: text !important;
+  }
+
+  .cursor-pointer {
+    cursor: none !important;
+  }
+
+  .cursor-default {
+    cursor: none !important;
+  }
+}
+
+.jg-body {
+  background-color: var(--color-tyme-canvas);
+  color: var(--color-tyme-text);
+  font-family: var(--font-tyme-body), 'Manrope', system-ui, sans-serif;
+  --font-body: var(--font-tyme-body);
+  --font-headline: var(--font-tyme-headline);
+}
+
+/* Tyme display outlines on dark canvas */
+.tyme-outline-cream {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #e8e4dc;
+  paint-order: stroke fill;
+}
+@media (min-width: 640px) {
+  .tyme-outline-cream {
+    -webkit-text-stroke-width: 2.25px;
+  }
+}
+@media (min-width: 1024px) {
+  .tyme-outline-cream {
+    -webkit-text-stroke-width: 3px;
+  }
+}
+
+/* Outlined hero word on warm cream landing (olive accent) */
+.tyme-outline-olive {
+  color: transparent;
+  -webkit-text-stroke: 1.5px #8b7d3a;
+  paint-order: stroke fill;
+}
+@media (min-width: 640px) {
+  .tyme-outline-olive {
+    -webkit-text-stroke-width: 2.25px;
+  }
+}
+@media (min-width: 1024px) {
+  .tyme-outline-olive {
+    -webkit-text-stroke-width: 3px;
+  }
+}
+
+/* Outlined type on light “paper” sections */
+.tyme-outline-ink {
+  color: transparent;
+  -webkit-text-stroke: 2px #33302e;
+  paint-order: stroke fill;
+}
+@media (min-width: 640px) {
+  .tyme-outline-ink {
+    -webkit-text-stroke-width: 2.75px;
+  }
+}
+@media (min-width: 1024px) {
+  .tyme-outline-ink {
+    -webkit-text-stroke-width: 3.5px;
+  }
+}
+
+.capsule-bg {
+  background-image: radial-gradient(circle at 50% 0%, rgba(245, 206, 83, 0.18) 0%, transparent 55%);
+}
+
+@keyframes shimmer-tyme {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes float-label {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer-tyme 2.8s ease-in-out infinite;
+}
+
+.animate-float-soft {
+  animation: float-label 4s ease-in-out infinite;
+}
+
+.reveal-text {
+  animation: reveal-up 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes orb-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.85;
+  }
+  33% {
+    transform: translate(6%, -4%) scale(1.05);
+    opacity: 1;
+  }
+  66% {
+    transform: translate(-5%, 5%) scale(0.96);
+    opacity: 0.75;
+  }
+}
+
+.animate-orb-float {
+  animation: orb-drift 18s ease-in-out infinite;
+}
+
+.animate-orb-float-delayed {
+  animation: orb-drift 22s ease-in-out infinite;
+}
+
+.hero-card-glow {
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 45%, rgba(245, 206, 83, 0.38), transparent 72%),
+    radial-gradient(ellipse 60% 50% at 85% 15%, rgba(3, 117, 36, 0.14), transparent 65%);
+  filter: blur(14px);
+}
+
+/* Seal page: URL panel rises in after “sealing” */
+@keyframes seal-url-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.seal-success-reveal {
+  animation: seal-url-reveal 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* jasminegunarto.com–style recreation (homepage) */
+@keyframes jg-digit-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.jg-digit {
+  animation: jg-digit-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  opacity: 0;
+}
+
+.jg-digit--delay {
+  animation-delay: 0.15s;
+}
+
+.jg-digit--delay2 {
+  animation-delay: 0.3s;
+}
+
+@keyframes jg-marquee-x {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.jg-marquee-row {
+  animation: jg-marquee-x 28s linear infinite;
+}
+
+.jg-footer-marquee {
+  display: flex;
+  width: max-content;
+  animation: jg-marquee-x 22s linear infinite;
+}
