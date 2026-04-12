@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getCapsuleTokenFromOpenUrl, isOpenSharePathname } from '@/lib/open-url'
+import { TYME_MAX_UNLOCK_FROM_NOW_MS } from '@/lib/tyme-schedule-limit'
 
 export const runtime = 'nodejs'
 
@@ -179,30 +180,37 @@ export async function POST(req: Request) {
 
   const brandImageUrl = resolveBrandInviteImageUrl()
 
-  let unlockMs: number | null = null
+  const now = Date.now()
+  let userUnlockMs: number | null = null
   if (scheduledAtRaw) {
     const t = Date.parse(scheduledAtRaw)
     if (!Number.isFinite(t)) {
       return NextResponse.json({ error: 'scheduledAt must be a valid ISO 8601 date.' }, { status: 400 })
     }
-    if (t <= Date.now()) {
+    if (t <= now) {
       return NextResponse.json(
         { error: 'For time-locked letters, the unlock time must still be in the future.' },
         { status: 400 },
       )
     }
-    unlockMs = t
+    userUnlockMs = t
   }
 
-  const isTimeLocked = unlockMs !== null
+  let effectiveScheduleMs: number | null = null
+  if (userUnlockMs !== null) {
+    const cap = now + TYME_MAX_UNLOCK_FROM_NOW_MS
+    effectiveScheduleMs = Math.min(userUnlockMs, cap)
+  }
 
+  const hasScheduledSend = effectiveScheduleMs !== null
   const { subject, html, text } = buildInviteEmail({
-    isTimeLocked,
+    isTimeLocked: hasScheduledSend,
     shareUrl,
     brandImageUrl,
   })
 
-  const scheduledAtIso = isTimeLocked ? new Date(unlockMs!).toISOString() : undefined
+  const scheduledAtIso =
+    effectiveScheduleMs !== null ? new Date(effectiveScheduleMs).toISOString() : undefined
 
   const resend = new Resend(resendKey)
   const { data, error } = await resend.emails.send({
@@ -224,6 +232,5 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     id: data?.id,
-    scheduledDelivery: !!scheduledAtIso,
   })
 }

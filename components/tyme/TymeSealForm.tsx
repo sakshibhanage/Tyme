@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { imageFileToDataUrl } from '@/lib/compress-image'
+import { clampUnlockMsToScheduleLimit } from '@/lib/tyme-schedule-limit'
 import { encodeCapsule } from '@/lib/payload'
 import { TymeBackgroundArt } from './TymeBackgroundArt'
 
@@ -68,8 +69,6 @@ export function TymeSealForm() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteSending, setInviteSending] = useState(false)
   const [inviteSent, setInviteSent] = useState(false)
-  /** True when API used Resend scheduled send (time-locked). */
-  const [inviteScheduledDelivery, setInviteScheduledDelivery] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [homeLeaveConfirmOpen, setHomeLeaveConfirmOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -115,7 +114,6 @@ export function TymeSealForm() {
       setShareUrl(null)
       setInviteEmail('')
       setInviteSent(false)
-      setInviteScheduledDelivery(false)
       setInviteError(null)
       setStep(2)
       return
@@ -149,10 +147,12 @@ export function TymeSealForm() {
         setFormError('That date is not valid.')
         return
       }
-      if (unlockMs <= Date.now()) {
+      const now = Date.now()
+      if (unlockMs <= now) {
         setFormError('Unlock must be in the future.')
         return
       }
+      unlockMs = clampUnlockMsToScheduleLimit(unlockMs, now)
     }
 
     const res = encodeCapsule(title.trim(), message.trim(), imageDataUrl, unlockMs)
@@ -192,12 +192,11 @@ export function TymeSealForm() {
           ...(scheduledAt ? { scheduledAt } : {}),
         }),
       })
-      const data = (await res.json()) as { error?: string; scheduledDelivery?: boolean }
+      const data = (await res.json()) as { error?: string }
       if (!res.ok) {
         setInviteError(data.error || 'Could not send the email.')
         return
       }
-      setInviteScheduledDelivery(!!data.scheduledDelivery)
       setInviteSent(true)
     } catch {
       setInviteError('Network error — try again.')
@@ -234,7 +233,6 @@ export function TymeSealForm() {
     setInviteEmail('')
     setInviteSending(false)
     setInviteSent(false)
-    setInviteScheduledDelivery(false)
     setInviteError(null)
   }
 
@@ -747,7 +745,6 @@ export function TymeSealForm() {
                       onChange={e => {
                         setInviteEmail(e.target.value)
                         setInviteSent(false)
-                        setInviteScheduledDelivery(false)
                         setInviteError(null)
                       }}
                       disabled={inviteSending || inviteSent}
@@ -787,9 +784,7 @@ export function TymeSealForm() {
                 ) : null}
                 {inviteSent ? (
                   <p className="font-tyme-sans text-sm" style={{ color: V.olive }}>
-                    {inviteScheduledDelivery
-                      ? 'Scheduled — they’ll get this when the seal opens.'
-                      : 'Sent — they should see it in their inbox shortly.'}
+                    Invitation sent.
                   </p>
                 ) : null}
               </div>
