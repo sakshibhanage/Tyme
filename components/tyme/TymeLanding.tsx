@@ -4,7 +4,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import Link from 'next/link'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { HomeEnvelopeCanvasLazy } from '@/components/home/HomeEnvelopeCanvasLazy'
 import { TymeBackgroundArt } from './TymeBackgroundArt'
 
@@ -51,6 +51,22 @@ const L = {
   cardTint: 'color-mix(in srgb, #ffffff 88%, #FDC5A5 12%)',
 } as const
 
+const MOBILE_HERO_MQ = '(max-width: 639px)'
+
+function subscribeMobileHero(cb: () => void) {
+  const mq = window.matchMedia(MOBILE_HERO_MQ)
+  mq.addEventListener('change', cb)
+  return () => mq.removeEventListener('change', cb)
+}
+
+function useIsMobileHeroEnvelope() {
+  return useSyncExternalStore(
+    subscribeMobileHero,
+    () => window.matchMedia(MOBILE_HERO_MQ).matches,
+    () => false,
+  )
+}
+
 function TymeLogo({ className = '' }: { className?: string }) {
   return (
     <Link href="/" className={`flex items-center gap-3 ${className}`} style={{ color: L.charcoal }}>
@@ -67,6 +83,7 @@ function TymeLogo({ className = '' }: { className?: string }) {
 
 export function TymeLanding() {
   const rootRef = useRef<HTMLDivElement>(null)
+  const isMobileHeroEnvelope = useIsMobileHeroEnvelope()
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -97,6 +114,8 @@ export function TymeLanding() {
   useLayoutEffect(() => {
     const root = rootRef.current
     if (!root) return
+
+    const mm = gsap.matchMedia()
 
     const ctx = gsap.context(() => {
       gsap.from('.tyme-header-inner', {
@@ -182,6 +201,47 @@ export function TymeLanding() {
         })
       }
 
+      mm.add('(max-width: 639px)', () => {
+        const featuresFloat = root.querySelector('.tyme-features-heading-mobile-float')
+        if (featuresFloat) {
+          gsap.to(featuresFloat, {
+            y: 16,
+            x: 10,
+            rotation: -0.9,
+            duration: 3.1,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+            delay: 0.4,
+            scrollTrigger: {
+              trigger: featuresFloat,
+              start: 'top 88%',
+              toggleActions: 'play none none none',
+            },
+            overwrite: 'auto',
+          })
+        }
+        const sealFloat = root.querySelector('.tyme-cta-seal-mobile-float')
+        if (sealFloat) {
+          gsap.to(sealFloat, {
+            y: 16,
+            x: 10,
+            rotation: -0.9,
+            duration: 3.1,
+            ease: 'sine.inOut',
+            repeat: -1,
+            yoyo: true,
+            delay: 0.55,
+            scrollTrigger: {
+              trigger: '.tyme-section-cta',
+              start: 'top 78%',
+              toggleActions: 'play none none none',
+            },
+            overwrite: 'auto',
+          })
+        }
+      })
+
       gsap.from('.tyme-feature-card', {
         scrollTrigger: {
           trigger: '.tyme-features-grid',
@@ -256,7 +316,10 @@ export function TymeLanding() {
       })
     }, root)
 
-    return () => ctx.revert()
+    return () => {
+      ctx.revert()
+      mm.revert()
+    }
   }, [])
 
   useEffect(() => {
@@ -338,43 +401,45 @@ export function TymeLanding() {
 
       <main className="relative z-10">
         {/* Hero — flow layout: headline block, then meta panel (no absolute overlap) */}
-        <section className="tyme-hero-section relative min-h-[100dvh] px-5 pb-24 pt-32 sm:px-10 sm:pb-32 sm:pt-36">
+        <section className="tyme-hero-section relative min-h-[100dvh] max-sm:overflow-x-hidden px-5 pb-14 pt-20 sm:px-10 sm:pb-32 sm:pt-36">
           <div className="relative mx-auto max-w-[1600px]">
-            <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:items-stretch lg:gap-x-10 lg:gap-y-14 xl:gap-x-14">
+            <div className="grid grid-cols-1 gap-2 sm:gap-12 lg:grid-cols-12 lg:items-stretch lg:gap-x-10 lg:gap-y-14 xl:gap-x-14">
               <div className="order-1 lg:col-span-5">
-                <div
-                  className="tyme-hero-title relative max-w-[min(100%,18ch)] will-change-transform"
-                >
-                  <h1 className="m-0">
-                    <span className="block font-tyme-sans text-[clamp(2.5rem,9vw,7rem)] font-extrabold leading-[0.96] tracking-[-0.03em] text-[#33302E]">
-                      Preserve your
-                    </span>
-                    <span className="mt-1 block font-tyme-sans text-[clamp(2.5rem,9vw,7rem)] font-extrabold italic leading-[0.96] tracking-[-0.03em] text-[#8B7D3A] sm:mt-2">
-                      Memories.
-                    </span>
-                  </h1>
+                <div className="tyme-hero-title relative max-w-[min(100%,18ch)] will-change-transform">
+                  <div className="max-sm:translate-y-3 sm:translate-y-0">
+                    <h1 className="m-0">
+                      <span className="block font-tyme-sans text-[clamp(2.85rem,11vw,7rem)] font-extrabold leading-[0.96] tracking-[-0.03em] text-[#33302E] sm:text-[clamp(2.5rem,9vw,7rem)]">
+                        Preserve your
+                      </span>
+                      <span className="mt-1 block font-tyme-sans text-[clamp(2.85rem,11vw,7rem)] font-extrabold italic leading-[0.96] tracking-[-0.03em] text-[#8B7D3A] sm:mt-2 sm:text-[clamp(2.5rem,9vw,7rem)]">
+                        Memories.
+                      </span>
+                    </h1>
+                  </div>
                 </div>
               </div>
 
-              <div className="tyme-hero-envelope order-2 flex w-full justify-center sm:-translate-x-2 sm:-translate-y-2 lg:col-span-7 lg:row-span-2 lg:self-start lg:justify-end lg:-translate-x-6 lg:-translate-y-6 xl:-translate-x-10 xl:-translate-y-8 2xl:-translate-x-12">
-                <div className="relative w-full overflow-visible sm:max-w-[1200px] lg:max-w-none lg:w-[86vw] xl:w-[78vw]">
-                  <div className="h-[min(78vh,760px)] w-full sm:h-[min(80vh,860px)] lg:h-[min(84vh,980px)]">
+              <div className="tyme-hero-envelope order-2 flex w-full justify-center max-sm:-mt-2 max-sm:items-center max-sm:overflow-hidden sm:-translate-x-2 sm:-translate-y-2 sm:mt-0 sm:items-stretch lg:col-span-7 lg:row-span-2 lg:self-start lg:justify-end lg:-translate-x-6 lg:-translate-y-6 xl:-translate-x-10 xl:-translate-y-8 2xl:-translate-x-12">
+                <div className="relative w-full max-sm:mx-auto max-sm:max-w-[min(100%,440px)] overflow-visible sm:max-w-[1200px] lg:max-w-none lg:w-[86vw] xl:w-[78vw]">
+                  <div className="h-[min(50vh,420px)] w-full sm:h-[min(80vh,860px)] lg:h-[min(84vh,980px)]">
                     <HomeEnvelopeCanvasLazy
                       variant="home"
                       canvasTransparent
                       parallax
-                      motionScale={0.28}
+                      motionScale={isMobileHeroEnvelope ? 0.26 : 0.28}
                       showStamp
-                      envelopeScale={1.95}
-                      cameraPosition={[0, 0.1, 6.75]}
+                      envelopeScale={isMobileHeroEnvelope ? 1.58 : 1.95}
+                      cameraPosition={
+                        isMobileHeroEnvelope ? [-0.42, 0.12, 7.45] : [0, 0.1, 6.75]
+                      }
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="order-3 lg:col-span-5">
+              <div className="order-3 max-sm:-mt-3 sm:mt-0 lg:col-span-5">
                 <div
-                  className="tyme-hero-meta mt-0 max-w-lg rounded-2xl border-0 p-8 shadow-[0_24px_56px_rgba(51,48,46,0.08)] backdrop-blur-sm sm:p-10 lg:mt-4"
+                  className="tyme-hero-meta mt-0 max-w-lg rounded-2xl border-0 px-6 py-6 shadow-[0_24px_56px_rgba(51,48,46,0.08)] backdrop-blur-sm sm:p-10 lg:mt-4"
                   style={{
                     backgroundColor: 'color-mix(in srgb, #FEF6F0 72%, #ffffff 28%)',
                   }}
@@ -382,10 +447,10 @@ export function TymeLanding() {
                   <p className="font-tyme-sans text-[10px] font-semibold uppercase tracking-[0.38em] text-[#8B7D3A]">
                     Start now
                   </p>
-                  <p className="mt-5 font-tyme-sans text-base leading-relaxed text-[#6B665F] sm:text-lg">
+                  <p className="mt-4 font-tyme-sans text-base leading-relaxed text-[#6B665F] sm:mt-5 sm:text-lg">
                     Create a time-locked memory in one link. No accounts. No servers.
                   </p>
-                  <div className="mt-8 flex flex-wrap gap-3">
+                  <div className="mt-5 flex flex-wrap gap-3 sm:mt-8">
                     <Link
                       href="/tyme/seal"
                       className="group inline-flex rounded-xl bg-tyme-gold px-10 py-4 font-tyme-sans text-[10px] font-bold uppercase tracking-[0.28em] text-tyme-ink shadow-[0_8px_24px_rgba(212,175,55,0.35)] transition duration-300 ease-out hover:-translate-y-1 hover:scale-[1.03] hover:bg-tyme-gold-hover hover:shadow-[0_14px_36px_rgba(212,175,55,0.45)] active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B7D3A] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFFDF5]"
@@ -409,8 +474,7 @@ export function TymeLanding() {
 
         <section
           id="features"
-          className="tyme-section-features scroll-mt-24 border-t px-5 py-28 sm:px-10 sm:py-36"
-          style={{ borderColor: `${L.border}cc` }}
+          className="tyme-section-features scroll-mt-24 px-5 py-28 sm:px-10 sm:py-36"
         >
           <div className="tyme-features-intro mx-auto max-w-[1600px]">
             <p className="tyme-st-features-label font-tyme-sans text-[10px] font-semibold uppercase tracking-[0.38em] text-[#8B7D3A]">
@@ -423,12 +487,14 @@ export function TymeLanding() {
                 data-magnet-strength="0.032"
                 data-magnet-rot-strength="0.002"
               >
-                <span className="tyme-st-features-head block font-tyme-sans text-[clamp(2.5rem,9vw,7rem)] font-extrabold leading-[0.96] tracking-[-0.03em] text-[#33302E]">
-                  Built for
-                </span>
-                <span className="tyme-st-features-head mt-1 block font-tyme-sans text-[clamp(2.5rem,9vw,7rem)] font-extrabold italic leading-[0.96] tracking-[-0.03em] text-[#8B7D3A] sm:mt-2">
-                  Simplicity
-                </span>
+                <div className="tyme-features-heading-mobile-float will-change-transform">
+                  <span className="tyme-st-features-head block font-tyme-sans text-[clamp(2.85rem,11vw,7rem)] font-extrabold leading-[0.96] tracking-[-0.03em] text-[#33302E] sm:text-[clamp(2.5rem,9vw,7rem)]">
+                    Built for
+                  </span>
+                  <span className="tyme-st-features-head mt-1 block font-tyme-sans text-[clamp(2.85rem,11vw,7rem)] font-extrabold italic leading-[0.96] tracking-[-0.03em] text-[#8B7D3A] sm:mt-2 sm:text-[clamp(2.5rem,9vw,7rem)]">
+                    Simplicity
+                  </span>
+                </div>
               </div>
               <p className="tyme-st-features-aside max-w-sm font-tyme-sans text-base leading-relaxed text-[#6B665F] lg:pt-6">
                 No complexity. No learning curve. Just the essentials to preserve what matters.
@@ -444,7 +510,7 @@ export function TymeLanding() {
               {features.map(f => (
                 <article
                   key={f.n}
-                  className={`tyme-feature-card flex min-h-[300px] flex-col rounded-2xl border p-7 sm:min-h-[320px] lg:rounded-none lg:border-0 lg:p-9 ${
+                  className={`tyme-feature-card flex min-h-0 flex-col rounded-2xl border px-6 py-5 sm:min-h-[320px] sm:p-7 lg:rounded-none lg:border-0 lg:p-9 ${
                     f.active
                       ? 'border-[#D8D3C9] text-[#33302E] ring-1 ring-[#8B7D3A]/35 lg:ring-[#D8D3C9]/80'
                       : 'border-[#D5CFC3] bg-[#E9E7DE]/35'
@@ -456,10 +522,10 @@ export function TymeLanding() {
                   >
                     {f.n}
                   </span>
-                  <h3 className="mt-8 font-tyme-sans text-2xl font-extrabold uppercase tracking-wide text-[#33302E] sm:text-3xl">
+                  <h3 className="mt-5 font-tyme-sans text-2xl font-extrabold uppercase tracking-wide text-[#33302E] sm:mt-8 sm:text-3xl">
                     {f.title}
                   </h3>
-                  <p className="mt-5 font-tyme-sans text-base leading-relaxed text-[#6B665F]">{f.body}</p>
+                  <p className="mt-4 font-tyme-sans text-base leading-relaxed text-[#6B665F] sm:mt-5">{f.body}</p>
                 </article>
               ))}
             </div>
@@ -480,11 +546,11 @@ export function TymeLanding() {
             <p className="tyme-cta-line font-tyme-sans text-[10px] font-semibold uppercase tracking-[0.48em] text-[#8B7D3A]">
               Start now
             </p>
-            <div className="tyme-cta-line mt-12 font-tyme-head text-[clamp(2.25rem,7vw,4.5rem)] italic leading-tight text-[#33302E]">
+            <div className="tyme-cta-line mt-12 font-tyme-head text-[clamp(2.65rem,9vw,4.5rem)] italic leading-tight text-[#33302E] sm:text-[clamp(2.25rem,7vw,4.5rem)]">
               Ready to
             </div>
             <div className="tyme-cursor-magnet tyme-cta-line mt-4 inline-block will-change-transform">
-              <span className="font-tyme-head text-[clamp(4rem,18vw,13rem)] font-semibold not-italic uppercase leading-[0.82] tracking-[0.02em]">
+              <span className="tyme-cta-seal-mobile-float inline-block will-change-transform font-tyme-head text-[clamp(4.45rem,21vw,13rem)] font-semibold not-italic uppercase leading-[0.82] tracking-[0.02em] sm:text-[clamp(4rem,18vw,13rem)]">
                 <span className="tyme-outline-olive-display" aria-label="Seal?">
                   Seal?
                 </span>

@@ -654,7 +654,7 @@ export function TymeSealForm() {
                           type="datetime-local"
                           value={unlockLocal}
                           onChange={e => setUnlockLocal(e.target.value)}
-                          className="mt-4 w-full max-w-xs rounded-md border px-3 py-2.5 font-tyme-sans text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#c4a44d]/40"
+                          className="mt-4 box-border w-full min-w-0 max-w-full rounded-md border px-3 py-2.5 font-tyme-sans text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#c4a44d]/40 sm:max-w-xs"
                           style={{
                             borderColor: V.letterRule,
                             backgroundColor: V.letterField,
